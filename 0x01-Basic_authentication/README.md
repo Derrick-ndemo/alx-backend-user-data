@@ -2,9 +2,7 @@
 
 This project contains tasks for learning to authenticate a user using the Basic authentication scheme.
 
-![auth](https://s3.amazonaws.com/alx-intranet.hbtn.io/uploads/medias/2020/5/6ccb363443a8f301bc2bc38d7a08e9650117de7c.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIARDDGGGOUSBVO6H7D%2F20231107%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20231107T093112Z&X-Amz-Expires=86400&X-Amz-SignedHeaders=host&X-Amz-Signature=119a6463d2c4f94a2edb97f6c857aae6259ee46af8050d910ca0ba73589295d2)
-
-## Tasks 
+## Tasks To Complete
 
 + [x] 0. **Simple-basic-API**
   + Setup and start server:
