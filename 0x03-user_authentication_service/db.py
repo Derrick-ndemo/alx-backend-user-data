@@ -8,7 +8,7 @@ from sqlalchemy import create_engine, tuple_
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.session import Session
-from sqlalchemy.exc import NoResultFound, InvalidRequestError
+from sqlalchemy.exc import NoResultFound, InvalidRequestError, IntegrityError
 from user import Base, User
 
 
@@ -44,16 +44,19 @@ class DB:
         Returns:
         - User: The User object representing the added user.
         """
+        # Create a new User object
+        new_user = User(email=email, hashed_password=hashed_password)
+        # Add the user to the session
+        self._session.add(new_user)
         try:
-            new_user = User(email=email, hashed_password=hashed_password)
-            self._session.add(new_user)
+            # Commit the changes to the database
             self._session.commit()
-        except Exception:
+        except IntegrityError:
+            # Handle IntegrityError (e.g., if the email is not unique)
             self._session.rollback()
-            new_user = None
-        
+            raise ValueError("User with this email already exists.")
         return new_user
-    
+
     def find_user_by(self, **kwargs) -> User:
         """
         Find a user by specified attributes.
@@ -68,35 +71,37 @@ class DB:
         - NoResultFound: If no results are found.
         - InvalidRequestError: If wrong query arguments are passed.
         """
-        
-        fields, values = [], []
-        for key, value in kwargs.items():
-            if hasattr(User, key):
-                fields.append(getattr(User, key))
-                values.append(value)
-            else:
-                raise InvalidRequestError()
-        result = self._session.query(User).filter(
-            tuple_(*fields).in_([tuple(values)])
-        ).first()
-        if result is None:
-            raise NoResultFound()
-        return result
+        try:
+            # Query the database for the user based on the provided arguments
+            user = self._session.query(User).filter_by(**kwargs).first()
+            if user is None:
+                raise NoResultFound("No user found with the provided criteria.")
+            return user
+        except InvalidRequestError as e:
+            # Handle InvalidRequestError (e.g., incorrect query arguments)
+            raise InvalidRequestError("Invalid query arguments.") from e
     
     def update_user(self, user_id: int, **kwargs) -> None:
         """Updates a user based on a given id.
         """
-        user = self.find_user_by(id=user_id)
-        if user is None:
-            return
-        update_source = {}
-        for key, value in kwargs.items():
-            if hasattr(User, key):
-                update_source[getattr(User, key)] = value
-            else:
-                raise ValueError()
-        self._session.query(User).filter(User.id == user_id).update(
-            update_source,
-            synchronize_session=False,
-        )
-        self._session.commit()
+        try:
+            # Find the user based on user_id
+            user = self.find_user_by(id=user_id)
+
+            # Update user attributes
+            for key, value in kwargs.items():
+                # Check if the argument corresponds to a user attribute
+                if hasattr(user, key):
+                    setattr(user, key, value)
+                else:
+                    raise ValueError(f"Invalid argument: {key}")
+
+            # Commit changes to the database
+            self._session.commit()
+        except NoResultFound:
+            # Handle NoResultFound (user not found)
+            raise ValueError(f"User with ID {user_id} not found.")
+        except InvalidRequestError as e:
+            # Handle InvalidRequestError (e.g., incorrect query arguments)
+            self._session.rollback()
+            raise InvalidRequestError("Invalid query arguments.") from e
