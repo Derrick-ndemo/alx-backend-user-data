@@ -32,7 +32,7 @@ class DB:
             DBSession = sessionmaker(bind=self._engine)
             self.__session = DBSession()
         return self.__session
-    
+
     def add_user(self, email: str, hashed_password: str) -> User:
         """
         Add a new user to the database.
@@ -51,24 +51,20 @@ class DB:
         except Exception:
             self._session.rollback()
             new_user = None
-        
         return new_user
-    
+
     def find_user_by(self, **kwargs) -> User:
         """
         Find a user by specified attributes.
-
         Parameters:
-        - kwargs: Arbitrary keyword arguments representing attributes to filter the query.
-
+        - kwargs: Arbitrary keyword arguments rep attributes
         Returns:
         - User: The User object found based on the query.
-
         Raises:
         - NoResultFound: If no results are found.
         - InvalidRequestError: If wrong query arguments are passed.
         """
-        
+
         fields, values = [], []
         for key, value in kwargs.items():
             if hasattr(User, key):
@@ -82,7 +78,7 @@ class DB:
         if result is None:
             raise NoResultFound()
         return result
-    
+
     def update_user(self, user_id: int, **kwargs) -> None:
         """Updates a user based on a given id.
         """
